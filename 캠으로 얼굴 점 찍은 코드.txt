@@ -1,0 +1,50 @@
+import dlib
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+
+# dlib에서 얼굴 감지기와 랜드마크 예측 모델을 초기화합니다.
+detector = dlib.get_frontal_face_detector()
+shape_predictor = dlib.shape_predictor('./models/shape_predictor_68_face_landmarks.dat')
+
+# OpenCV를 사용하여 웹캠을 엽니다.
+cap = cv2.VideoCapture(0)
+
+while True:
+    # 웹캠에서 프레임을 읽어옵니다.
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    # BGR에서 RGB로 변환합니다.
+    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+    # 이미지에서 얼굴을 감지합니다.
+    dets = detector(frame_rgb, 1)
+
+    # 감지된 얼굴 주변에 직사각형을 그리고 랜드마크를 표시합니다.
+    for det in dets:
+        # 얼굴 경계 상자 좌표를 추출합니다.
+        x, y, w, h = det.left(), det.top(), det.width(), det.height()
+
+        # 얼굴 주위에 직사각형을 그립니다.
+        cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+
+        # 얼굴 랜드마크를 예측합니다.
+        shape = shape_predictor(frame_rgb, det)
+
+        # 얼굴 랜드마크 지점 주변에 원을 그립니다.
+        for i in range(shape.num_parts):
+            cv2.circle(frame, (shape.part(i).x, shape.part(i).y), 1, (0, 255, 0), -1)
+
+    # OpenCV 창에 이미지를 표시합니다.
+    cv2.imshow('Face Landmarks Detection', frame)
+
+    # 'q' 키를 눌러 종료합니다.
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+# 웹캠을 해제하고 창을 닫습니다.
+cap.release()
+cv2.destroyAllWindows()
